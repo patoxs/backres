@@ -7,26 +7,6 @@ python3 snapshot
 
 Nota: por el momento solo esta para Postgres 12
 
-Se deben definir las siguientes variables de entorno:
-
-PROJECT
-AWS_REGION
-SUBNET_DESTINO
-REGION_DESTINO
-INSTANCE_CLASS
-
-ID_CUENTA
-DB_USER
-DB_PASSWORD
-DB_PORT
-DB_DATABASE
-
-DB_HOST_DESTINO
-DB_USER_DESTINO
-DB_PASSWORD_DESTINO
-DB_PORT_DESTINO
-DB_DATABASE_DESTINO
-
 Ejemplo de implementacion en pod:
 
 ```
@@ -60,7 +40,7 @@ spec:
       - name: DB_DATABASE
         value: "nombre_base_datos"
       - name: DB_HOST_DESTINO
-        value: "host_destino"
+        value: "nombre_pod.namespace"
       - name: DB_USER_DESTINO
         value: "user_destino"
       - name: DB_PASSWORD_DESTINO
