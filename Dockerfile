@@ -1,4 +1,4 @@
-FROM python:3.7.11-slim-stretch
+FROM debian:stretch
 
 LABEL maintainer="patoxs <patonxs@gmail.com>"
 
