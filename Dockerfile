@@ -1,4 +1,4 @@
-FROM debian:stretch
+FROM python:3.11.0a4-bullseye
 
 LABEL maintainer="patoxs <patonxs@gmail.com>"
 
