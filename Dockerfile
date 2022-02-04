@@ -1,4 +1,4 @@
-FROM python:3.11.0a4-bullseye
+FROM python:3.9-slim-buster
 
 LABEL maintainer="patoxs <patonxs@gmail.com>"
 
