@@ -151,6 +151,16 @@ def delete_rds_backup(name_rds):
         print(e)
         exit(1)
 
+def delete_snapshot(SNAP):
+    print(f"delete snapshot {SNAP}")
+    try:
+        response = RDS_DESTINO.delete_db_snapshot(
+            DBSnapshotIdentifier=SNAP
+        )
+    except Exception as e:
+        print(e)
+        exit(1)
+
         
 
 def backup_postgres_db(host, database_name, port, user, password, dest_file, verbose):
@@ -253,60 +263,13 @@ def create_db(db_host, database, db_port, user_name, user_password):
     con.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     cur = con.cursor()
     try:
+        cur.execute(f"""SELECT pg_terminate_backend (pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '{database}' AND pid <> pg_backend_pid();""")
         cur.execute("DROP DATABASE {} ;".format(database))
     except Exception as e:
         print('DB does not exist, nothing to drop')
     cur.execute("CREATE DATABASE {} ;".format(database))
     cur.execute("GRANT ALL PRIVILEGES ON DATABASE {} TO {} ;".format(database, user_name))
-    return database    
-
-
-def backup_mysql_db(host, database_name, port, user, password, dest_file, verbose):
-    """
-    Backup mysql db to a file.
-    """
-    if verbose:
-        try:
-            process = subprocess.Popen(
-                ['mysqldump',
-                 '--host {}'.format(host),
-                 '--port {}'.format(port),
-                 '--user {}'.format(user),
-                 '--password {}'.format(password),
-                 '--databases {}'.format(database_name),
-                 '--verbose',
-                 '>',dest_file],
-                stdout=subprocess.PIPE
-            )
-            output = process.communicate()[0]
-            if int(process.returncode) != 0:
-                print('Command failed. Return code : {}'.format(process.returncode))
-                exit(1)
-            return output
-        except Exception as e:
-            print(e)
-            exit(1)
-    else:
-
-        try:
-            process = subprocess.Popen(
-                ['mysqldump',
-                 '--host {}'.format(host),
-                 '--port {}'.format(port),
-                 '--user {}'.format(user),
-                 '--password {}'.format(password),
-                 '--databases {}'.format(database_name),
-                 '>',dest_file],
-                stdout=subprocess.PIPE
-            )
-            output = process.communicate()[0]
-            if process.returncode != 0:
-                print('Command failed. Return code : {}'.format(process.returncode))
-                exit(1)
-            return output
-        except Exception as e:
-            print(e)
-            exit(1)       
+    return database           
 
 
 def upload_to_s3(file_full_path, dest_file):
@@ -337,23 +300,16 @@ def download_from_s3(backup_s3_key, dest_file):
 def main():
     new_name_rds = "restored-"+ PROJECT + "-" + str(TODAY)
     host_backup = new_name_rds + "." + ID_CUENTA + "." + REGION_DESTINO + ".rds.amazonaws.com"
-    # snapshot_name = get_info_snapshot_rds_today(False)
-    # print(snapshot_name)
-    # snapshot_name = get_info_snapshot_rds_today(True)
-    # print(snapshot_name)
+
     snapshot_name = copy_snapshot_other_region('gds')
     snapshot_rds_up(snapshot_name, new_name_rds)
     backup_postgres_db(host_backup, DB_DATABASE, DB_PORT, DB_USER, DB_PASSWORD, 'dump_', 1)
     delete_rds_backup(new_name_rds)
     create_db(DB_HOST_DESTINO, DB_DATABASE_DESTINO, DB_PORT_DESTINO, DB_USER_DESTINO, DB_PASSWORD_DESTINO)
     restore_postgres_db(DB_HOST_DESTINO, DB_DATABASE_DESTINO, DB_PORT_DESTINO, DB_USER_DESTINO, DB_PASSWORD_DESTINO, '/app/dump_', 1)
-
-    # backup_postgres_db(DB_HOST, DB_DATABASE_CMS, DB_PORT, DB_USER_CMS, DB_PASSWORD_CMS, 'cms_', 1)
-    # create_db(DB_HOST_DESTINO, DB_DATABASE_CMS, DB_PORT_DESTINO, DB_USER_DESTINO, DB_PASSWORD_DESTINO)
-    # restore_postgres_db(DB_HOST_DESTINO, DB_DATABASE_CMS, DB_PORT_DESTINO, DB_USER_DESTINO, DB_PASSWORD_DESTINO, '/app/cms_', 1)
-
+    
+    delete_snapshot(snapshot_name)
 
 
 if __name__ == '__main__':
     main()
-

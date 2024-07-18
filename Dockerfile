@@ -25,3 +25,4 @@ RUN pip install boto3 psycopg2-binary
 
 WORKDIR /app
 COPY snapshot.py /app/
+COPY reporteria.py /app/
